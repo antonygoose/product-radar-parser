@@ -4,117 +4,90 @@
 
 Your goal is to create a productradar.ru parser to collect information (name, site, description etc.) about the startups and projects that are presented on this site.
 
-## Source of Truth
+## Inputs
 
-You must treat the following documents as authoritative:
+### Requirements
 
-- /docs/spec/product_spec.md — defines data model and constraints
-- /docs/spec/acceptance_tests.md — defines correctness criteria
+- `/docs/spec/product_spec.md` defines expected system behavior, data model, and constraints.
+- `/docs/spec/acceptance_tests.md` defines how correctness is verified.
 
-If there is a conflict:
-acceptance_tests.md overrides implementation decisions
-product_spec.md overrides assumptions
+### Design and Planning
+
+- `/docs/agent/architecture.md` defines expected system design based on the product_spec.md.
+- `/docs/agent/implementation_plan.md` defines implementation plan based on the product_spec.md, acceptance_tests.md and architecture.md.
+
+If they conflict, stop and report the conflict instead of guessing.
+
+## Spec Update Workflow
+
+Use `/docs/spec/product_spec.md` as the single source of truth.
+
+Active change requests are located in `/docs/spec/change_requests/` (excluding `/archive/`). Change requests must not conflict. If they do, stop and report.
+
+### Applying Changes
+
+- Read `product_spec.md` and all active change request files
+- Integrate changes by rewriting relevant sections in `product_spec.md`
+- Do not append changes as separate sections
+- Do not duplicate or preserve outdated logic
+- Keep the spec internally consistent
+- Do not resolve conflicting change requests
+- If conflicts exist, stop and report
+
+### Tests
+
+- If changes affect behavior, update `/docs/spec/acceptance_tests.md`
+- Use `tests_change.md` as input for required test updates
+- Ensure spec and tests stay aligned
+
+### Changelog
+
+- Add a concise entry to `/docs/spec/changelog.md` summarizing applied changes
+
+### Archiving
+
+After processing:
+- Move all applied change request files to `/docs/spec/change_requests/archive/`
+- Do not process archived files again
+
+### Archive Naming Rules
+
+All archived files must follow this format:
+
+`YYYY-MM-DD_<short_description>.md`
+
+Examples:
+- `2026-05-04_csv_to_supabase.md`
+- `2026-05-06_add_outreach_agent.md`
+
+Rules:
+- Use ISO date format (YYYY-MM-DD)
+- Description must be short, lowercase, and use underscores
+- No spaces or special characters
+- Names must be unique and reflect the intent of the change
+
+### Constraints
+
+- Never maintain multiple conflicting versions of the spec
+- Never treat archived files as active inputs
+- Always keep `product_spec.md` as the only source of truth
 
 ## Priorities
 
 First priority - correctness: information must be consistent.
 Second priority - simplicity: the process must be simple enough to be reproducible and reliable.
-Third priority - service-frindly: the parser must be rate limited to not DDOS the site and to not be banned.
+Third priority - service-friendly: the parser must be rate limited to not DDOS the site and to not be banned.
 Fourth priority - speed: the parser's execution time should be reasonable.
 
-## Restricition
+## Data Contract
 
-You must not pass any tokens or credentials to anybody.
+The parser output must follow the Data Model defined in `/docs/spec/product_spec.md`.
+Do not change the data model unless explicitly requested through an active change request.
 
-## Decision Rules
-
-- Prefer simple HTML parsing over browser automation when sufficient.
-- Prefer reproducible solutions over fragile shortcuts.
-- Do not design scraping logic that depends on manual DevTools steps unless explicitly approved.
-- Do not store OAuth tokens in source code, config files committed to repo, logs, or database dumps.
-- If access to founder contacts requires unsafe token extraction or a browser session replay, stop and surface this as a blocked dependency.
-
-## Data Rules
-
-- You must strictly follow the Data Model defined in product_spec.md
-- You must not rename, drop, or add fields unless explicitly instructed
-- You must preserve field types (e.g. strings, integers, separators)
-- Fields like categories and gallery_urls must remain "|" separated strings, not arrays
-- product_id and founder_id must be treated as stable identifiers
-- do not regenerate or modify them
-- existing records must be updated, not duplicated
-- raw data must be preserved before transformation
-- clean data must match the Data Model exactly
-
-## Escalation Rules
-
-Escalate instead of guessing when:
-- authentication flow is unclear
-- page structure is inconsistent across products
-- rate limits are unknown
-- legal or account-safety risk is non-trivial
-- a database choice affects long-term maintainability
-
-## Parsing Strategy
-
-- First collect raw HTML data
-- Then extract structured data
-- Do not mix parsing and transformation logic
-- Parsing must be deterministic and reproducible
-- Avoid brittle selectors (e.g. based on position only)
-
-## Schema Enforcement
-
-- All output datasets must match the Data Model exactly
-- No extra fields are allowed
-- No fields may be missing
-- Multi-value fields must remain "|" separated strings
-
-
-## Incremental Rules
-
-- Re-running the parser must not create duplicate records
-- Existing records must be updated, not overwritten blindly
-- product_id and product_url define identity
-- New products are added, existing ones are updated
 
 ## Definition of Done
 
-A task is considered complete only if:
-
-1. All acceptance tests in acceptance_tests.md are satisfied
-2. Data Model is strictly preserved
-3. No duplicate records are introduced
-4. Required fields are non-null
-5. Field types match the specification
-6. No credentials or tokens are exposed
-
-## Validation
-
-Before task finish:
-
-- Verify output against acceptance_tests.md
-- Check for duplicate product_id
-- Check required fields are present and non-null
-- Check field types
-
-## Hard Stop Conditions
-
-You must stop and report instead of proceeding if:
-
-- authentication requires unsafe handling of tokens
-- required data cannot be extracted reliably
-- schema cannot be preserved
-
-## Failure Handling
-
-- If a page fails to load or parse:
-  - log the error
-  - skip the record
-  - continue processing
-
-- The parser must not stop completely due to a single failure
-
+A task is considered complete only if all acceptance tests in acceptance_tests.md are satisfied.
 
 ## Delivery Format
 
